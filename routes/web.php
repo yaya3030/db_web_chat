@@ -1,27 +1,28 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ChatController;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', function () { return view('welcome'); });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', function () { return view('dashboard'); })->name('dashboard');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-Route::middleware(['auth', 'verified'])->group(function () {
+    // Chat Utama
     Route::get('/chat', [ChatController::class, 'index'])->name('chat');
     Route::get('/messages/{userId}', [ChatController::class, 'getMessages']);
+    Route::get('/messages/group/{groupId}', [ChatController::class, 'getGroupMessages']);
     Route::post('/messages', [ChatController::class, 'sendMessage']);
+    
+    // API Grup - Pastikan mengarah ke storeGroup
+    Route::post('/groups', [ChatController::class, 'storeGroup']);
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 });
+
+// WAJIB ADA: Mengaktifkan jalur realtime
+Broadcast::routes();
 
 require __DIR__.'/auth.php';
