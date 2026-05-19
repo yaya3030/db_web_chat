@@ -3,45 +3,51 @@
 namespace App\Http\Controllers;
 
 use App\Models\{Message, User, Group};
-use App\Events\MessageSent; // Pastikan memanggil Event jika kamu menggunakan broadcast pesan
+use App\Events\MessageSent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ChatController extends Controller
 {
     public function index() {
-        // Mengambil semua user selain diri sendiri, dan mengambil grup yang diikuti oleh user saat ini
         return view('chat', [
             'users' => User::where('id', '!=', Auth::id())->get(),
-            'groups' => Auth::user()->groups ?? collect()
+            'groups' => Auth::user()->groups()->get()
         ]);
     }
 
     public function storeGroup(Request $request) {
-        // Validasi input nama grup
         $request->validate(['name' => 'required|string|max:255']);
 
-        try {
-            // FIX: Menyertakan 'created_by' agar MySQL tidak melempar error General Error 1364 lagi
-            $group = Group::create([
-                'name' => $request->name,
-                'created_by' => Auth::id() // Otomatis mengisi id user pembuat grup
-            ]);
-            
-            // Hubungkan user yang sedang login ke tabel pivot 'group_user'
-            $group->users()->attach(Auth::id());
-            
-            return response()->json([
-                'status' => 'success', 
-                'group' => $group
-            ]);
-        } catch (\Exception $e) {
-            // MENAMPILKAN ERROR ASLI DARI DATABASE
-            return response()->json([
-                'status' => 'error', 
-                'message' => 'Database Error: ' . $e->getMessage()
-            ], 500);
-        }
+        // Menggunakan Database Transaction agar tidak ada data setengah jadi
+        return DB::transaction(function () use ($request) {
+            try {
+                $group = Group::create([
+                    'name' => $request->name,
+                    'created_by' => Auth::id()
+                ]);
+                
+                // Ambil semua ID user yang terdaftar
+                $allUserIds = User::pluck('id')->toArray();
+                
+                // Masukkan semua user ke tabel pivot
+                $group->users()->sync($allUserIds);
+                
+                return response()->json([
+                    'status' => 'success', 
+                    'group' => $group
+                ]);
+            } catch (\Exception $e) {
+                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            }
+        });
+    }
+
+    public function getGroupUsers(Group $group)
+    {
+        // Mengembalikan daftar user dengan relasi
+        return response()->json($group->users()->get());
     }
 
     public function getMessages($userId) {
@@ -57,7 +63,12 @@ class ChatController extends Controller
     }
 
     public function sendMessage(Request $request) {
-        // Membuat data pesan di database
+        $request->validate([
+            'message' => 'required|string',
+            'group_id' => 'nullable|exists:groups,id',
+            'receiver_id' => 'nullable|exists:users,id'
+        ]);
+
         $message = Message::create([
             'sender_id' => Auth::id(),
             'receiver_id' => $request->receiver_id,
@@ -66,10 +77,7 @@ class ChatController extends Controller
         ]);
         
         $loadedMessage = $message->load('sender');
-
-        // Pemicu Realtime: Menyiarkan pesan ke user lain secara live lewat Reverb
-        // (Aktifkan baris di bawah jika kamu sudah membuat file MessageSent Event)
-        // broadcast(new MessageSent($loadedMessage))->toOthers();
+        broadcast(new MessageSent($loadedMessage))->toOthers();
         
         return response()->json(['message' => $loadedMessage]);
     }
