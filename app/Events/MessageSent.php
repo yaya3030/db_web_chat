@@ -4,59 +4,30 @@ namespace App\Events;
 
 use App\Models\Message;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow; // PASTIKAN MENGGUNAKAN ShouldBroadcastNow
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MessageSent implements ShouldBroadcast
+class MessageSent implements ShouldBroadcastNow // UBAH DI SINI
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable, SerializesModels;
 
     public $message;
 
     public function __construct(Message $message)
     {
-        // Memastikan relasi sender dimuat agar data nama user terbawa
+        // Memastikan relasi pengirim (sender) ikut terbawa ke dalam payload WebSocket
         $this->message = $message->load('sender');
     }
 
-    /**
-     * Nama event yang akan didengarkan di sisi JavaScript (Echo)
-     */
-    public function broadcastAs(): string
+    public function broadcastOn(): Channel
     {
-        return 'MessageSent';
-    }
-
-    /**
-     * Menentukan kemana pesan harus disiarkan
-     */
-    public function broadcastOn(): array
-    {
-        // 1. Jika pesan dikirim ke GRUP
+        // Jika pesan dikirim ke grup, siarkan ke channel group, jika personal siarkan ke channel user
         if ($this->message->group_id) {
-            return [
-                new PrivateChannel('group.' . $this->message->group_id),
-            ];
+            return new PrivateChannel('group.' . $this->message->group_id);
         }
 
-        // 2. Jika pesan dikirim secara PRIBADI (DM)
-        // Kita siarkan ke channel pengirim dan penerima agar kedua layar update
-        return [
-            new PrivateChannel('user.' . $this->message->receiver_id),
-            new PrivateChannel('user.' . $this->message->sender_id),
-        ];
-    }
-
-    /**
-     * Opsional: Menentukan data spesifik yang dikirim ke frontend
-     */
-    public function broadcastWith(): array
-    {
-        return [
-            'message' => $this->message,
-        ];
+        return new PrivateChannel('user.' . $this->message->receiver_id);
     }
 }

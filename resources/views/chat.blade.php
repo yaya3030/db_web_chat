@@ -54,17 +54,18 @@
     </div>
 
     @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pusher/8.3.0/pusher.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     
     <script>
+        // Token CSRF disuntikkan setelah library Axios di atas ter-load sempurna
+        axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
         window.activeChat = { type: null, id: null };
         const authId = {{ Auth::id() }};
         
-        axios.defaults.headers.common['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-        // Init Echo
+        // Inisialisasi Laravel Echo
         window.Echo = new Echo({
             broadcaster: 'reverb',
             key: '{{ env("VITE_REVERB_APP_KEY") }}',
@@ -75,21 +76,26 @@
             authEndpoint: '/broadcasting/auth'
         });
 
-        // 1. Presence: Radar Online
+        // 1. PRESENCE TRACKING (Melacak User Online/Offline)
         window.Echo.join('chat')
             .here(users => users.forEach(u => u.id != authId && document.getElementById(`status-${u.id}`)?.classList.remove('hidden')))
             .joining(u => u.id != authId && document.getElementById(`status-${u.id}`)?.classList.remove('hidden'))
             .leaving(u => document.getElementById(`status-${u.id}`)?.classList.add('hidden'));
 
-        // 2. Private: Listener untuk DM (Self)
-        window.Echo.private('user.' + authId).listen('.MessageSent', (e) => {
-            if (window.activeChat.type === 'user' && e.message.sender_id == window.activeChat.id) appendMsg(e.message);
-        });
+        // 2. REAL-TIME PRIVATE CHAT (Mendengarkan DM Masuk)
+        // Perbaikan: Menghapus tanda titik sebelum nama event MessageSent
+        window.Echo.private('user.' + authId)
+            .listen('MessageSent', (e) => {
+                if (window.activeChat.type === 'user' && e.message.sender_id == window.activeChat.id) {
+                    appendMsg(e.message);
+                }
+            });
 
+        // 3. FUNGSI MEMILIH OBROLAN
         window.selectChat = (type, id, name) => {
-            // Perbaikan: Hapus channel lama dengan aman (bukan leaveAll)
-            if (window.activeChat.id) {
-                window.Echo.leave(window.activeChat.type + '.' + window.activeChat.id);
+            // Putuskan koneksi dari channel grup lama jika berpindah chat grup
+            if (window.activeChat.type === 'group') {
+                window.Echo.leave('group.' + window.activeChat.id);
             }
 
             window.activeChat = { type, id };
@@ -99,7 +105,15 @@
 
             if (type === 'group') {
                 document.getElementById('group-members-box').classList.remove('hidden');
-                window.Echo.private('group.' + id).listen('.MessageSent', (e) => appendMsg(e.message));
+                
+                // REAL-TIME GROUP CHAT (Mendengarkan pesan masuk di grup secara dynamic)
+                // Perbaikan: Menghapus tanda titik sebelum nama event MessageSent
+                window.Echo.private('group.' + id)
+                    .listen('MessageSent', (e) => {
+                        if (e.message.sender_id != authId) {
+                            appendMsg(e.message);
+                        }
+                    });
                 
                 axios.get(`/groups/${id}/users`).then(res => {
                     document.getElementById('group-members-list').innerText = res.data.map(u => u.id === authId ? 'Anda' : u.name).join(', ');
@@ -108,6 +122,7 @@
                 document.getElementById('group-members-box').classList.add('hidden');
             }
 
+            // Ambil Riwayat Obrolan
             axios.get(type === 'user' ? `/messages/${id}` : `/messages/group/${id}`).then(res => {
                 const box = document.getElementById('chat-messages');
                 box.innerHTML = '';
@@ -116,6 +131,7 @@
             });
         };
 
+        // 4. MENAMPILKAN PESAN KE LAYAR
         function appendMsg(m) {
             const isMe = m.sender_id == authId;
             const div = document.createElement('div');
@@ -126,19 +142,24 @@
             container.scrollTop = container.scrollHeight;
         }
 
+        // 5. FUNGSI MENGIRIM PESAN
         window.sendMsg = () => {
             const input = document.getElementById('message-input');
             if (!input.value.trim() || !window.activeChat.id) return;
-            axios.post('/messages', {
+            
+            const payload = {
                 message: input.value,
                 receiver_id: window.activeChat.type === 'user' ? window.activeChat.id : null,
                 group_id: window.activeChat.type === 'group' ? window.activeChat.id : null
-            }).then(res => {
+            };
+
+            axios.post('/messages', payload).then(res => {
                 appendMsg(res.data.message);
                 input.value = '';
             });
         };
 
+        // 6. MEMBUAT GRUP BARU
         window.createGroup = () => {
             const name = prompt("Nama Grup Baru:");
             if (name) axios.post('/groups', { name: name.trim() }).then(() => window.location.reload());

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Broadcast;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // WAJIB: Memerintahkan Laravel untuk memuat rute otentikasi WebSocket (channels.php)
+        Broadcast::routes();
+
+        // Memastikan file channels.php dibaca saat aplikasi pertama kali dimuat
+        if (file_exists(base_path('routes/channels.php'))) {
+            require base_path('routes/channels.php');
+        }
     }
 }

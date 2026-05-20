@@ -1,33 +1,34 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
-use App\Models\Group;
-use App\Models\User;
 
 /**
  * 1. PRESENCE CHANNEL: 'chat'
- * Menggunakan model User untuk memastikan data terverifikasi.
+ * Tempat mengumpulkan radar user yang sedang online/offline.
  */
 Broadcast::channel('chat', function ($user) {
-    return [
-        'id'   => $user->id,
-        'name' => $user->name,
-    ];
+    if (auth()->check()) {
+        return [
+            'id'   => $user->id,
+            'name' => $user->name,
+        ];
+    }
+    return false;
 });
 
 /**
- * 2. PRIVATE GROUP CHANNEL: 'group.{groupId}'
- * Menggunakan relasi model yang lebih efisien.
+ * 2. PRIVATE USER CHANNEL: 'user.{receiverId}'
+ * Diperbaiki: Menggunakan receiverId agar sesuai dengan logika penerima pesan di Event.
+ * User hanya bisa mendengarkan channel yang memiliki ID sama dengan ID dirinya sendiri.
+ */
+Broadcast::channel('user.{receiverId}', function ($user, $receiverId) {
+    return (int) $user->id === (int) $receiverId;
+});
+
+/**
+ * 3. PRIVATE GROUP CHANNEL: 'group.{groupId}'
+ * Menggunakan exists() untuk pengecekan super cepat di database pivot.
  */
 Broadcast::channel('group.{groupId}', function ($user, $groupId) {
-    // Memastikan user adalah anggota grup yang valid
     return $user->groups()->where('groups.id', $groupId)->exists();
-});
-
-/**
- * 3. PRIVATE USER CHANNEL: 'user.{userId}'
- * Penambahan pengecekan tipe data (casting) untuk keamanan.
- */
-Broadcast::channel('user.{userId}', function ($user, $userId) {
-    return (int) $user->id === (int) $userId;
 });
