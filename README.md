@@ -1,59 +1,30 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Laravel Reverb Real-Time Chat Pro 💬
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web chat Pro berbasis *real-time* tanpa *refresh* halaman yang dibangun menggunakan **Laravel 11**, **Laravel Reverb** (WebSocket Server bawaan Laravel), dan **Laravel Echo**. Aplikasi ini mendukung komunikasi instan baik melalui pesan privat (Direct Message) maupun obrolan grup (Group Chat).
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## ✨ Fitur Utama
+- **Real-Time Direct Messaging (DM):** Kirim dan terima pesan antar pengguna secara instan tanpa perlu memuat ulang halaman.
+- **Dynamic Group Chat:** Membuat grup baru secara instan dan mengotomatisasi penggabungan anggota ke dalam ruang obrolan grup yang privat.
+- **Presence Tracking (Indikator Online):** Melacak status pengguna secara langsung (*live*). Bulatan hijau akan otomatis menyala jika pengguna sedang membuka aplikasi chat dan mati saat mereka keluar.
+- **Instant Broadcasting:** Menggunakan implementasi `ShouldBroadcastNow` untuk mem-bypass antrean (*queue*), memastikan pesan terkirim pada detik yang sama saat tombol kirim diklik.
+- **Optimized Chat History:** Mengambil riwayat pesan lama secara efisien menggunakan Axios dan merender balon chat secara rapi (sisi kanan untuk pengirim, sisi kiri untuk penerima).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🚀 Teknologi yang Digunakan
+- **Backend:** [Laravel 11](https://laravel.com/)
+- **WebSocket Server:** [Laravel Reverb](https://laravel.com/docs/11.x/reverb)
+- **Frontend & Real-time Client:** Tailwind CSS (Blade Components), [Laravel Echo](https://laravel.com/docs/11.x/broadcasting#installing-laravel-echo), Axios, Pusher JS Client (sebagai jembatan Reverb).
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 🛠️ Panduan Instalasi & Menjalankan Proyek
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Jika proyek ini ingin dijalankan kembali di komputer lokal atau komputer lain, ikuti langkah-langkah berikut:
 
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 1. Clone Repositori
+```bash
+git clone [https://github.com/username-kamu/nama-repositori-kamu.git](https://github.com/username-kamu/nama-repositori-kamu.git)
+cd nama-repositori-kamu
